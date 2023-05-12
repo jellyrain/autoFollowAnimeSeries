@@ -31,20 +31,11 @@ def parse_ssr(ssr_url: str) -> dict[str, str]:
         'server_port': int(port),  # 服务器端口
         'method': method,  # 加密方式
         'password': parse_base64(password.split('/?')[0]),  # 密码
-        'port_password': None,  # 端口密码
         'protocol': protocol,  # 协议
         'protocol_param': parse_base64(query.get('protoparam', '')),  # 协议参数
         'obfs': obfs,  # 混淆
         'obfs_param': parse_base64(query.get('obfsparam', '')),  # 混淆参数
         'group': parse_base64(query.get('group', '')),  # 分组
-        'additional_ports': {},  # 额外端口
-        'additional_ports_only': False,  # 仅额外端口
-        'udp_timeout': 120,  # UDP 超时
-        'udp_cache': 64,  # UDP 缓存
-        'fast_open': False,  # 快速打开
-        'verbose': False,  # 详细
-        'connect_verbose_info': 0,  # 连接详细信息
-        'connect': 0,  # 连接
         'ssr_url': ssr_url  # SSR 链接
     }
 

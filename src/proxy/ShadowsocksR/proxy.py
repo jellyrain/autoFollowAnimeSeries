@@ -1,54 +1,31 @@
-import signal
+import os
 import socket
-import sys
 import time
 
-from src.proxy.ShadowsocksR.shadowsocks import asyncdns, daemon, tcprelay, udprelay, eventloop
 
+def start(ssr_dict, local_address: str = '127.0.0.1', local_port: int = 1080, udp: int = 0) -> None:
+    """启动 ShadowsocksR 代理
 
-def start(ssr_dict, local_address: str = '127.0.0.1', local_port: int = 1080, timeout: int = 300, workers: int = 1,
-          dns_ipv6: bool = False) -> None:
-    """在Windows操作系统平台开启shadowsocksr代理
-
-            :param dns_ipv6: 是否支持ipv6
-            :param workers: 加密级别
-            :param timeout: 启动延迟
-            :param local_port: 本地监听端口
-            :param local_address: 本地监听地址
-            :type ssr_dict: shadowsocksr 节点信息字典
+    :param ssr_dict: SSR 服务器配置
+    :param local_address: 本地地址
+    :param local_port: 本地端口
+    :param udp: UDP 转发
+    :return: None
     """
-    ssr_dict['local_address'] = local_address
-    ssr_dict['local_port'] = local_port
-    ssr_dict['timeout'] = timeout
-    ssr_dict['workers'] = workers
+    cmd_str = 'bin/ShadowsocksR.exe'
+    cmd_str += '-s ' + ssr_dict['server']  # 服务器地址
+    cmd_str += '-p ' + str(ssr_dict['server_port'])  # 服务器端口
+    cmd_str += '-k ' + ssr_dict['password']  # 密码
+    cmd_str += '-m ' + ssr_dict['method']  # 加密方式
+    cmd_str += '-O ' + ssr_dict['protocol']  # 协议
+    cmd_str += '-G ' + ssr_dict['protocol_param']  # 协议参数
+    cmd_str += '-o ' + ssr_dict['obfs']  # 混淆
+    cmd_str += '-g ' + ssr_dict['obfs_param']  # 混淆参数
+    cmd_str += '-b ' + local_address  # 本地地址
+    cmd_str += '-l ' + str(local_port)  # 本地端口
+    cmd_str += '-u ' + str(udp)  # UDP 转发
 
-    if not dns_ipv6:
-        asyncdns.IPV6_CONNECTION_SUPPORT = False
-
-        try:
-            daemon.daemon_exec(ssr_dict)
-            dns_resolver = asyncdns.DNSResolver()
-            tcp_server = tcprelay.TCPRelay(ssr_dict, dns_resolver, True)
-            udp_server = udprelay.UDPRelay(ssr_dict, dns_resolver, True)
-            loop = eventloop.EventLoop()
-            dns_resolver.add_to_loop(loop)
-            tcp_server.add_to_loop(loop)
-            udp_server.add_to_loop(loop)
-
-            def handler(signum, _):
-                tcp_server.close(next_tick=True)
-                udp_server.close(next_tick=True)
-
-            signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM), handler)
-
-            def int_handler(signum, _):
-                sys.exit(1)
-
-            signal.signal(signal.SIGINT, int_handler)
-            daemon.set_user(ssr_dict.get('user', None))
-            loop.run()
-        except Exception as e:
-            sys.exit(1)
+    os.system(cmd_str)
 
 
 def is_valid_connect(server: str, port: int) -> tuple[bool, str]:
@@ -73,10 +50,18 @@ def is_valid_connect(server: str, port: int) -> tuple[bool, str]:
         delay = round(end_time - start_time, 2) * 1000
         return True, str(delay)
 
+
 def get_proxys(local_address: str = '127.0.0.1', local_port: int = 1080) -> dict[str, str]:
+    """获取代理字典
+
+    :param local_address: 本地地址
+    :param local_port: 本地端口
+    :return: 代理字典
+    """
     return {
-    'http': f'socks5://{local_address}:{local_port}',
-    'https': f'socks5://{local_address}:{local_port}',
-}
+        'http': f'socks5://{local_address}:{local_port}',
+        'https': f'socks5://{local_address}:{local_port}',
+    }
+
 
 __all__ = ['start', 'is_valid_connect', 'get_proxys']
